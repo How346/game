@@ -1,6 +1,6 @@
 name: gridsnap
-description: A visually stunning 3D puzzle game with a premium glassmorphism aesthetic.
-publish_to: 'none' # Prevents accidental publishing to pub.dev
+description: A premium 3D puzzle game.
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -9,22 +9,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Local storage for saving levels, scores, and preferences
   shared_preferences: ^2.2.2
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # Linting rules for clean code
   flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
-  
-  # Uncomment below if you decide to add custom fonts or icons later
-  # assets:
-  #   - assets/images/
-  # fonts:
-  #   - family: Roboto
-  #     fonts:
-  #       - asset: fonts/Roboto-Regular.ttf
