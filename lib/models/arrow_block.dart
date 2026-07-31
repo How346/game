@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import '../config/game_theme.dart';
+
 enum Direction { up, down, left, right }
 
 class ArrowBlock {
@@ -17,7 +20,6 @@ class ArrowBlock {
     this.isHighlighted = false,
   });
 
-  // Calculate step offsets based on direction
   int get dx {
     switch (direction) {
       case Direction.left: return -1;
@@ -32,5 +34,21 @@ class ArrowBlock {
       case Direction.down: return 1;
       default: return 0;
     }
+  }
+
+  Color get color {
+    switch (direction) {
+      case Direction.up: return GameTheme.upColor;
+      case Direction.down: return GameTheme.downColor;
+      case Direction.left: return GameTheme.leftColor;
+      case Direction.right: return GameTheme.rightColor;
+    }
+  }
+
+  // Clone for the solver
+  ArrowBlock clone() {
+    return ArrowBlock(
+      id: id, x: x, y: y, direction: direction, isCleared: isCleared,
+    );
   }
 }
