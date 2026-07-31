@@ -1,0 +1,57 @@
+name: Build Flutter Release APK
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allows you to trigger the build manually from the Actions tab
+
+jobs:
+  build:
+    name: Build & Upload APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setup Java Environment (Required for Android build)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      # 3. Setup Flutter Environment
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # 4. Fetch dependencies
+      - name: Install Dependencies
+        run: flutter pub get
+
+      # 5. Verify formatting and linting (Optional but recommended)
+      - name: Analyze Code
+        run: flutter analyze
+
+      # 6. Build the Android Release APK
+      # Note: This builds an unsigned "app-release.apk" (or signed with default debug keys). 
+      # To sign for Play Store, you must inject your Keystore via GitHub Secrets.
+      - name: Build APK
+        run: flutter build apk --release
+
+      # 7. Upload the compiled APK as a downloadable artifact
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-snake-game-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
