@@ -8,7 +8,7 @@ class ArrowBlock {
   bool isCleared;
   bool isHighlighted;
 
-  // New properties for extreme sliding animation
+  // Animation properties
   double animOffsetX = 0;
   double animOffsetY = 0;
 
@@ -33,7 +33,6 @@ class ArrowBlock {
     }
   }
 
-  // Calculate where the block flies off to when clicked
   void triggerFlyOutAnimation() {
     isCleared = true;
     switch (direction) {
@@ -42,5 +41,17 @@ class ArrowBlock {
       case Direction.left: animOffsetX = -1000; break;
       case Direction.right: animOffsetX = 1000; break;
     }
+  }
+
+  // Restored clone method required by the level solver
+  ArrowBlock clone() {
+    return ArrowBlock(
+      id: id, 
+      x: x, 
+      y: y, 
+      direction: direction, 
+      isCleared: isCleared,
+      isHighlighted: isHighlighted
+    );
   }
 }
