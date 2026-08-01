@@ -27,8 +27,20 @@ class StorageService {
     int currentBest = await getBestSteps(level);
     if (steps < currentBest) {
       await prefs.setInt('best_steps_$level', steps);
-      return true; // New best!
+      return true;
     }
     return false;
+  }
+
+  // --- NEW: Stars Storage ---
+  static Future<int> getStars(int level) async => (await SharedPreferences.getInstance()).getInt('stars_$level') ?? 0;
+  
+  static Future<void> saveStars(int level, int stars) async {
+    final prefs = await SharedPreferences.getInstance();
+    int currentStars = await getStars(level);
+    // Only overwrite if the player earned more stars than before
+    if (stars > currentStars) {
+      await prefs.setInt('stars_$level', stars);
+    }
   }
 }
