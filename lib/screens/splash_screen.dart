@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../config/game_theme.dart';
+import '../theme/app_theme.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,15 +15,16 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(context, 
-        MaterialPageRoute(builder: (_) => const HomeScreen()));
+      if(mounted) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GameTheme.bgPrimary,
+      backgroundColor: AppTheme.bgLight,
       body: Center(
         child: TweenAnimationBuilder(
           tween: Tween<double>(begin: 0, end: 1),
@@ -40,21 +41,21 @@ class _SplashScreenState extends State<SplashScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: GameTheme.blockSurface,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20)
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)
                         ]
                       ),
-                      child: const Icon(Icons.grid_view_rounded, size: 80, color: GameTheme.upColor),
+                      child: const Icon(Icons.grid_view_rounded, size: 80, color: AppTheme.clayBlockLight),
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      GameTheme.appName,
+                      'GridSnap',
                       style: GoogleFonts.poppins(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        color: GameTheme.textDark,
+                        color: AppTheme.textDark,
                         letterSpacing: 2,
                       ),
                     )
