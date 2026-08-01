@@ -18,6 +18,7 @@ class _GameScreenState extends State<GameScreen> {
   late Level currentLevel;
   int hearts = 3;
   int steps = 0;
+  int perfectSteps = 0;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _GameScreenState extends State<GameScreen> {
       hearts = 3;
       steps = 0;
       currentLevel = Level.generateLevel(widget.levelNumber);
+      perfectSteps = currentLevel.blocks.length; // Minimum possible steps
     });
   }
 
@@ -50,23 +52,28 @@ class _GameScreenState extends State<GameScreen> {
     final settings = context.read<SettingsProvider>();
     settings.triggerHaptic();
 
+    // Every tap counts as a step, right or wrong
+    setState(() { steps++; }); 
+
     if (_canBlockClear(block)) {
       setState(() {
-        steps++;
         block.triggerFlyOutAnimation(); 
       });
 
-      // Check win condition after animation delay
       Future.delayed(const Duration(milliseconds: 300), () {
         if (currentLevel.blocks.every((b) => b.isCleared)) {
           Navigator.pushReplacement(context, MaterialPageRoute(
-            builder: (_) => LevelClearedScreen(levelNumber: widget.levelNumber, steps: steps)
+            builder: (_) => LevelClearedScreen(
+              levelNumber: widget.levelNumber, 
+              steps: steps,
+              perfectSteps: perfectSteps, // Pass this to calculate stars
+            )
           ));
         }
       });
     } else {
       setState(() => hearts--);
-      if (hearts <= 0) _startLevel(); // Quick restart on fail
+      if (hearts <= 0) _startLevel(); // Quick restart on fail (steps reset)
     }
   }
 
@@ -122,7 +129,6 @@ class _GameScreenState extends State<GameScreen> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Background Dots (Reference: 1000651340.jpg)
           for (int y = 0; y < currentLevel.gridHeight; y++)
             for (int x = 0; x < currentLevel.gridWidth; x++)
               Positioned(
@@ -131,7 +137,6 @@ class _GameScreenState extends State<GameScreen> {
                 child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), shape: BoxShape.circle)),
               ),
           
-          // Animated Blocks
           for (var block in currentLevel.blocks)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
@@ -164,7 +169,7 @@ class _GameScreenState extends State<GameScreen> {
         children: [
           TextButton.icon(
             icon: const Icon(Icons.star, color: Colors.orange), label: Text('Hint', style: TextStyle(color: textColor, fontSize: 18)),
-            onPressed: () {},
+            onPressed: () {}, // Optional: Implement hint logic here
           ),
           TextButton.icon(
             icon: const Icon(Icons.refresh, color: Colors.blue), label: Text('Restart', style: TextStyle(color: textColor, fontSize: 18)),
