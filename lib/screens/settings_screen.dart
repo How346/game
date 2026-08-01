@@ -1,57 +1,59 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../config/game_theme.dart';
-import '../services/storage_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
+import '../widgets/clay_card.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool isSoundOn = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  void _loadSettings() async {
-    bool sound = await StorageService.isSoundEnabled();
-    setState(() => isSoundOn = sound);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    final isDark = settings.isDarkMode;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final cardColor = isDark ? const Color(0xFF1E2235) : Colors.white;
+
     return Scaffold(
-      backgroundColor: GameTheme.bgPrimary,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: GameTheme.textDark),
-        title: Text('Settings', style: GoogleFonts.poppins(color: GameTheme.textDark, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent, elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+        title: Text('Settings', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 24)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: GameTheme.blockSurface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
-          ),
-          child: SwitchListTile(
-            title: Text('Sound Effects', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: GameTheme.textDark)),
-            value: isSoundOn,
-            activeColor: GameTheme.upColor,
-            onChanged: (val) {
-              setState(() => isSoundOn = val);
-              StorageService.setSoundEnabled(val);
-            },
-          ),
-        ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          _buildToggleTile('Theme', 'Dark Mode', Icons.dark_mode, cardColor, textColor, settings.isDarkMode, settings.toggleTheme),
+          const SizedBox(height: 15),
+          _buildToggleTile('Sound Effects', 'Enabled', Icons.volume_up, cardColor, textColor, settings.isSoundEnabled, settings.toggleSound),
+          const SizedBox(height: 15),
+          _buildToggleTile('Haptic Vibration', 'Enabled', Icons.vibration, cardColor, textColor, settings.isHapticEnabled, settings.toggleHaptic),
+          const SizedBox(height: 15),
+          _buildLinkTile('Reset Game Progress', 'Clear all stars and levels', Icons.delete_outline, cardColor, Colors.redAccent),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleTile(String title, String sub, IconData icon, Color bg, Color text, bool value, VoidCallback onTap) {
+    return ClayCard(
+      color: bg, shadowColor: Colors.black12, padding: const EdgeInsets.all(12),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blueAccent),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: text)),
+        subtitle: Text(sub, style: TextStyle(color: text.withOpacity(0.5))),
+        trailing: Switch(value: value, onChanged: (v) => onTap(), activeColor: Colors.blueAccent),
+      ),
+    );
+  }
+
+  Widget _buildLinkTile(String title, String sub, IconData icon, Color bg, Color iconColor) {
+    return ClayCard(
+      color: bg, shadowColor: Colors.black12, padding: const EdgeInsets.all(12),
+      child: ListTile(
+        leading: Icon(icon, color: iconColor),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(sub),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
       ),
     );
   }
