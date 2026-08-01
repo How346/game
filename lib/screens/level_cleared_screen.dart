@@ -6,7 +6,14 @@ import 'game_screen.dart';
 class LevelClearedScreen extends StatefulWidget {
   final int levelNumber;
   final int steps;
-  const LevelClearedScreen({super.key, required this.levelNumber, required this.steps});
+  final int perfectSteps; // Added to calculate stars
+
+  const LevelClearedScreen({
+    super.key, 
+    required this.levelNumber, 
+    required this.steps,
+    required this.perfectSteps,
+  });
 
   @override
   State<LevelClearedScreen> createState() => _LevelClearedScreenState();
@@ -15,17 +22,30 @@ class LevelClearedScreen extends StatefulWidget {
 class _LevelClearedScreenState extends State<LevelClearedScreen> {
   bool isNewBest = false;
   int bestSteps = 0;
+  int starsEarned = 0;
 
   @override
   void initState() {
     super.initState();
-    _saveAndLoadProgress();
+    _calculateAndSaveProgress();
   }
 
-  void _saveAndLoadProgress() async {
+  void _calculateAndSaveProgress() async {
+    // 1. Calculate Stars
+    if (widget.steps == widget.perfectSteps) {
+      starsEarned = 3; // Perfect!
+    } else if (widget.steps <= widget.perfectSteps + 2) {
+      starsEarned = 2; // Made 1 or 2 mistakes
+    } else {
+      starsEarned = 1; // Passed, but made multiple mistakes
+    }
+
+    // 2. Save everything
     StorageService.saveUnlockedLevel(widget.levelNumber + 1);
+    StorageService.saveStars(widget.levelNumber, starsEarned);
     bool newBest = await StorageService.saveBestSteps(widget.levelNumber, widget.steps);
     int best = await StorageService.getBestSteps(widget.levelNumber);
+    
     setState(() {
       isNewBest = newBest;
       bestSteps = best;
@@ -34,7 +54,6 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Forcing Dark Mode colors for this specific screen per the image design
     return Scaffold(
       backgroundColor: const Color(0xFF111424), 
       body: Center(
@@ -48,13 +67,13 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
               Text('Level ${widget.levelNumber}', style: const TextStyle(color: Colors.white70, fontSize: 18)),
               const SizedBox(height: 30),
               
-              // Stars
-              const Row(
+              // Dynamic Stars Display
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.star, color: Colors.amber, size: 50),
-                  Icon(Icons.star, color: Colors.amber, size: 60),
-                  Icon(Icons.star, color: Colors.amber, size: 50),
+                  Icon(Icons.star, color: starsEarned >= 1 ? Colors.amber : Colors.white24, size: 50),
+                  Icon(Icons.star, color: starsEarned >= 3 ? Colors.amber : Colors.white24, size: 60), // Center star is 3rd star
+                  Icon(Icons.star, color: starsEarned >= 2 ? Colors.amber : Colors.white24, size: 50),
                 ],
               ),
               const SizedBox(height: 40),
@@ -69,7 +88,7 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('🚶 Steps', style: TextStyle(color: Colors.white70, fontSize: 18)),
-                        Text('${widget.steps}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('${widget.steps} / ${widget.perfectSteps}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const Divider(color: Colors.white24, height: 30),
@@ -102,7 +121,7 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
               ),
               const SizedBox(height: 15),
               TextButton(
-                onPressed: () => Navigator.pop(context), // Goes back to Level Select
+                onPressed: () => Navigator.pop(context), 
                 child: const Text('Level Select', style: TextStyle(color: Colors.white54, fontSize: 18)),
               )
             ],
