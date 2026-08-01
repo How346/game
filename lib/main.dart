@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'config/game_theme.dart';
-import 'screens/splash_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/settings_provider.dart';
+import 'theme/app_theme.dart';
+import 'screens/home_screen.dart'; // Make sure Splash Screen routes here
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(const GridSnapApp());
+  
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => SettingsProvider(),
+      child: const GridSnapApp(),
+    ),
+  );
 }
 
 class GridSnapApp extends StatelessWidget {
@@ -14,14 +22,15 @@ class GridSnapApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    
     return MaterialApp(
-      title: GameTheme.appName,
+      title: 'GridSnap',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: GameTheme.bgPrimary,
-      ),
-      home: const SplashScreen(),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: const HomeScreen(),
     );
   }
 }
