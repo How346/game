@@ -6,7 +6,7 @@ import 'game_screen.dart';
 class LevelClearedScreen extends StatefulWidget {
   final int levelNumber;
   final int steps;
-  final int perfectSteps; // Added to calculate stars
+  final int perfectSteps;
 
   const LevelClearedScreen({
     super.key, 
@@ -31,16 +31,14 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
   }
 
   void _calculateAndSaveProgress() async {
-    // 1. Calculate Stars
     if (widget.steps == widget.perfectSteps) {
-      starsEarned = 3; // Perfect!
+      starsEarned = 3; 
     } else if (widget.steps <= widget.perfectSteps + 2) {
-      starsEarned = 2; // Made 1 or 2 mistakes
+      starsEarned = 2; 
     } else {
-      starsEarned = 1; // Passed, but made multiple mistakes
+      starsEarned = 1; 
     }
 
-    // 2. Save everything
     StorageService.saveUnlockedLevel(widget.levelNumber + 1);
     StorageService.saveStars(widget.levelNumber, starsEarned);
     bool newBest = await StorageService.saveBestSteps(widget.levelNumber, widget.steps);
@@ -67,18 +65,16 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
               Text('Level ${widget.levelNumber}', style: const TextStyle(color: Colors.white70, fontSize: 18)),
               const SizedBox(height: 30),
               
-              // Dynamic Stars Display
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.star, color: starsEarned >= 1 ? Colors.amber : Colors.white24, size: 50),
-                  Icon(Icons.star, color: starsEarned >= 3 ? Colors.amber : Colors.white24, size: 60), // Center star is 3rd star
+                  Icon(Icons.star, color: starsEarned >= 3 ? Colors.amber : Colors.white24, size: 60), 
                   Icon(Icons.star, color: starsEarned >= 2 ? Colors.amber : Colors.white24, size: 50),
                 ],
               ),
               const SizedBox(height: 40),
 
-              // Score Card
               ClayCard(
                 color: const Color(0xFF1E2235),
                 shadowColor: Colors.black45,
@@ -103,7 +99,8 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
                       const SizedBox(height: 15),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                        // FIX: Updated withOpacity to withValues
+                        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
                         child: const Text('🎉 NEW BEST!', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
                       )
                     ]
@@ -114,9 +111,10 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
 
               GestureDetector(
                 onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => GameScreen(levelNumber: widget.levelNumber + 1))),
-                child: ClayCard(
+                // FIX: Added const keyword here
+                child: const ClayCard(
                   color: Colors.blueAccent, shadowColor: Colors.black, borderRadius: 30,
-                  child: const Center(child: Text('Next Level →', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
+                  child: Center(child: Text('Next Level →', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
                 ),
               ),
               const SizedBox(height: 15),
