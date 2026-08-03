@@ -47,7 +47,8 @@ class _SplashScreenState extends State<SplashScreen> {
                           BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)
                         ]
                       ),
-                      child: Icon(Icons.grid_view_rounded, size: 80, color: AppTheme.clayBlockLight),
+                      // FIX: Added const keyword here
+                      child: const Icon(Icons.grid_view_rounded, size: 80, color: AppTheme.clayBlockLight),
                     ),
                     const SizedBox(height: 24),
                     Text(
