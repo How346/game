@@ -44,11 +44,9 @@ class _SplashScreenState extends State<SplashScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
-                          // Updated to .withValues() to clear the deprecation info
                           BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)
                         ]
                       ),
-                      // Removed the 'const' keyword here that was causing the invalid_constant error
                       child: Icon(Icons.grid_view_rounded, size: 80, color: AppTheme.clayBlockLight),
                     ),
                     const SizedBox(height: 24),
