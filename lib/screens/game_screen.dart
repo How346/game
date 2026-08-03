@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/arrow_block.dart';
 import '../models/level.dart';
@@ -22,10 +23,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   int steps = 0;
   int perfectSteps = 0;
 
+  // --- NEW: Combo System Variables ---
+  int comboCount = 0;
+  DateTime? lastTapTime;
+  bool showComboText = false;
+
   @override
   void initState() {
     super.initState();
-    // Gentle pulse for background dots
     _bgPulseController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
     _startLevel();
   }
@@ -40,9 +45,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     setState(() {
       hearts = 3;
       steps = 0;
+      comboCount = 0;
+      showComboText = false;
       currentLevel = Level.generateLevel(widget.levelNumber);
       perfectSteps = currentLevel.blocks.length;
     });
+    // Reset background pulse speed
+    _bgPulseController.duration = const Duration(seconds: 2);
+    _bgPulseController.repeat(reverse: true);
   }
 
   bool _canBlockClear(ArrowBlock block) {
@@ -56,7 +66,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     return true;
   }
 
-  // --- NEW: Hint Logic ---
   void _triggerHint() {
     for (var block in currentLevel.blocks) {
       if (!block.isCleared && _canBlockClear(block)) {
@@ -64,27 +73,65 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         Future.delayed(const Duration(milliseconds: 1000), () {
           if (mounted) setState(() => block.isHighlighted = false);
         });
-        break; // Only highlight one block
+        break;
       }
     }
+  }
+
+  // --- NEW: Handle the physical press down (Squish) ---
+  void _onBlockTapDown(ArrowBlock block) {
+    if (block.isCleared) return;
+    setState(() => block.isPressed = true);
+  }
+
+  // --- NEW: Handle if user drags finger off the block (Cancel squish) ---
+  void _onBlockTapCancel(ArrowBlock block) {
+    setState(() => block.isPressed = false);
   }
 
   void _onBlockTapped(ArrowBlock block) {
     if (block.isCleared) return;
     
-    final settings = context.read<SettingsProvider>();
-    settings.triggerHaptic();
+    setState(() {
+      block.isPressed = false; // Remove squish
+      steps++; 
+    }); 
 
-    setState(() { steps++; }); 
+    final settings = context.read<SettingsProvider>();
 
     if (_canBlockClear(block)) {
+      // --- NEW: Combo Logic ---
+      final now = DateTime.now();
+      if (lastTapTime != null && now.difference(lastTapTime!).inMilliseconds < 800) {
+        comboCount++;
+        showComboText = true;
+        
+        // Speed up background based on combo
+        int pulseSpeed = 2000 - (comboCount * 300);
+        if (pulseSpeed < 400) pulseSpeed = 400;
+        _bgPulseController.duration = Duration(milliseconds: pulseSpeed);
+        _bgPulseController.repeat(reverse: true);
+
+        // Stronger haptics for combos
+        if (settings.isHapticEnabled) HapticFeedback.mediumImpact();
+        
+        // Hide combo text shortly after
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) setState(() => showComboText = false);
+        });
+      } else {
+        comboCount = 1; // Reset combo
+        if (settings.isHapticEnabled) HapticFeedback.lightImpact();
+      }
+      lastTapTime = now;
+
+      // Fire projectile animation
       setState(() {
         block.triggerFlyOutAnimation(); 
       });
 
       Future.delayed(const Duration(milliseconds: 350), () {
         if (!mounted) return;
-        
         if (currentLevel.blocks.every((b) => b.isCleared)) {
           Navigator.pushReplacement(context, MaterialPageRoute(
             builder: (_) => LevelClearedScreen(
@@ -96,6 +143,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         }
       });
     } else {
+      // Failed tap
+      comboCount = 0;
+      if (settings.isHapticEnabled) HapticFeedback.heavyImpact();
       setState(() => hearts--);
       if (hearts <= 0) _startLevel(); 
     }
@@ -153,7 +203,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // --- NEW: Animated Background Dots ---
+          // Background Dots
           AnimatedBuilder(
             animation: _bgPulseController,
             builder: (context, child) {
@@ -165,7 +215,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                         left: x * blockSize + (blockSize / 2) - 4,
                         top: y * blockSize + (blockSize / 2) - 4,
                         child: Transform.scale(
-                          scale: 0.8 + (_bgPulseController.value * 0.4), // Pulse size
+                          scale: 0.8 + (_bgPulseController.value * 0.4),
                           child: Container(
                             width: 8, height: 8, 
                             decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2 + (_bgPulseController.value * 0.2)), shape: BoxShape.circle)
@@ -179,25 +229,26 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           
           for (var block in currentLevel.blocks)
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
+              // NEW: easeInBack makes the block pull back slightly before shooting forward like a slingshot!
+              duration: const Duration(milliseconds: 350),
+              curve: block.isCleared ? Curves.easeInBack : Curves.easeOut,
               left: (block.x * blockSize) + block.animOffsetX,
               top: (block.y * blockSize) + block.animOffsetY,
               width: blockSize,
               height: blockSize,
-              // Applies smooth fade and shrink when cleared
               child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 250),
                 opacity: block.opacity,
                 child: AnimatedScale(
-                  duration: const Duration(milliseconds: 300),
-                  scale: block.scale,
+                  duration: const Duration(milliseconds: 100), // Fast squish speed
+                  scale: block.isPressed ? 0.85 : 1.0, // NEW: Squish effect when pressed
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: () => _onBlockTapped(block),
+                      onTapDown: (_) => _onBlockTapDown(block),
+                      onTapCancel: () => _onBlockTapCancel(block),
+                      onTapUp: (_) => _onBlockTapped(block),
                       child: ClayCard(
-                        // Highlight overrides color if hint is triggered
                         color: block.isHighlighted ? Colors.orangeAccent : _getBlockColor(block.direction), 
                         shadowColor: Colors.black, borderRadius: 16,
                         child: Icon(_getArrowIcon(block.direction), color: Colors.white, size: 32),
@@ -207,6 +258,33 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                 ),
               ),
             ),
+
+            // --- NEW: Floating Combo Text Overlay ---
+            if (comboCount > 1)
+              Center(
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: showComboText ? 1.0 : 0.0,
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 200),
+                      scale: showComboText ? 1.2 : 0.5,
+                      curve: Curves.elasticOut,
+                      child: Text(
+                        'COMBO x$comboCount!',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.amber,
+                          shadows: [
+                            Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 5))
+                          ]
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
         ],
       ),
     );
