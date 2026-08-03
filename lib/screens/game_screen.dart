@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/arrow_block.dart';
 import '../models/level.dart';
 import '../providers/settings_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/clay_card.dart';
 import 'level_cleared_screen.dart';
 
@@ -14,8 +15,9 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateMixin {
   late Level currentLevel;
+  late AnimationController _bgPulseController;
   int hearts = 3;
   int steps = 0;
   int perfectSteps = 0;
@@ -23,7 +25,15 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    // Gentle pulse for background dots
+    _bgPulseController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
     _startLevel();
+  }
+
+  @override
+  void dispose() {
+    _bgPulseController.dispose();
+    super.dispose();
   }
 
   void _startLevel() {
@@ -46,6 +56,19 @@ class _GameScreenState extends State<GameScreen> {
     return true;
   }
 
+  // --- NEW: Hint Logic ---
+  void _triggerHint() {
+    for (var block in currentLevel.blocks) {
+      if (!block.isCleared && _canBlockClear(block)) {
+        setState(() => block.isHighlighted = true);
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) setState(() => block.isHighlighted = false);
+        });
+        break; // Only highlight one block
+      }
+    }
+  }
+
   void _onBlockTapped(ArrowBlock block) {
     if (block.isCleared) return;
     
@@ -59,8 +82,8 @@ class _GameScreenState extends State<GameScreen> {
         block.triggerFlyOutAnimation(); 
       });
 
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (!mounted) return; // FIX: Guard the async gap
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
         
         if (currentLevel.blocks.every((b) => b.isCleared)) {
           Navigator.pushReplacement(context, MaterialPageRoute(
@@ -130,30 +153,56 @@ class _GameScreenState extends State<GameScreen> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          for (int y = 0; y < currentLevel.gridHeight; y++)
-            for (int x = 0; x < currentLevel.gridWidth; x++)
-              Positioned(
-                left: x * blockSize + (blockSize / 2) - 4,
-                top: y * blockSize + (blockSize / 2) - 4,
-                // FIX: Updated withOpacity to withValues
-                child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), shape: BoxShape.circle)),
-              ),
+          // --- NEW: Animated Background Dots ---
+          AnimatedBuilder(
+            animation: _bgPulseController,
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  for (int y = 0; y < currentLevel.gridHeight; y++)
+                    for (int x = 0; x < currentLevel.gridWidth; x++)
+                      Positioned(
+                        left: x * blockSize + (blockSize / 2) - 4,
+                        top: y * blockSize + (blockSize / 2) - 4,
+                        child: Transform.scale(
+                          scale: 0.8 + (_bgPulseController.value * 0.4), // Pulse size
+                          child: Container(
+                            width: 8, height: 8, 
+                            decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2 + (_bgPulseController.value * 0.2)), shape: BoxShape.circle)
+                          ),
+                        ),
+                      ),
+                ],
+              );
+            }
+          ),
           
           for (var block in currentLevel.blocks)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInBack,
+              curve: Curves.easeOutCubic,
               left: (block.x * blockSize) + block.animOffsetX,
               top: (block.y * blockSize) + block.animOffsetY,
               width: blockSize,
               height: blockSize,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  onTap: () => _onBlockTapped(block),
-                  child: ClayCard(
-                    color: Colors.pink, shadowColor: Colors.black, borderRadius: 16,
-                    child: Icon(_getArrowIcon(block.direction), color: Colors.white, size: 32),
+              // Applies smooth fade and shrink when cleared
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: block.opacity,
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 300),
+                  scale: block.scale,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                      onTap: () => _onBlockTapped(block),
+                      child: ClayCard(
+                        // Highlight overrides color if hint is triggered
+                        color: block.isHighlighted ? Colors.orangeAccent : _getBlockColor(block.direction), 
+                        shadowColor: Colors.black, borderRadius: 16,
+                        child: Icon(_getArrowIcon(block.direction), color: Colors.white, size: 32),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -170,8 +219,8 @@ class _GameScreenState extends State<GameScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           TextButton.icon(
-            icon: const Icon(Icons.star, color: Colors.orange), label: Text('Hint', style: TextStyle(color: textColor, fontSize: 18)),
-            onPressed: () {}, 
+            icon: const Icon(Icons.lightbulb, color: Colors.orange), label: Text('Hint', style: TextStyle(color: textColor, fontSize: 18)),
+            onPressed: _triggerHint, 
           ),
           TextButton.icon(
             icon: const Icon(Icons.refresh, color: Colors.blue), label: Text('Restart', style: TextStyle(color: textColor, fontSize: 18)),
@@ -180,6 +229,15 @@ class _GameScreenState extends State<GameScreen> {
         ],
       ),
     );
+  }
+
+  Color _getBlockColor(Direction dir) {
+    switch (dir) {
+      case Direction.up: return AppTheme.arrowUp;
+      case Direction.down: return AppTheme.arrowDown;
+      case Direction.left: return AppTheme.arrowLeft;
+      case Direction.right: return AppTheme.arrowRight;
+    }
   }
 
   IconData _getArrowIcon(Direction dir) {
