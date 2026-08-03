@@ -7,8 +7,12 @@ class ArrowBlock {
   final Direction direction;
   bool isCleared;
   bool isHighlighted;
+  
+  // Refined animation properties
   double animOffsetX = 0;
   double animOffsetY = 0;
+  double opacity = 1.0;
+  double scale = 1.0;
 
   ArrowBlock({
     required this.id, required this.x, required this.y, 
@@ -31,13 +35,18 @@ class ArrowBlock {
     }
   }
 
+  // Smooth, simple pop and fade animation
   void triggerFlyOutAnimation() {
     isCleared = true;
+    opacity = 0.0; // Fade out
+    scale = 0.4;   // Shrink down
+    
+    // Slide just a little bit off its grid slot
     switch (direction) {
-      case Direction.up: animOffsetY = -1000; break;
-      case Direction.down: animOffsetY = 1000; break;
-      case Direction.left: animOffsetX = -1000; break;
-      case Direction.right: animOffsetX = 1000; break;
+      case Direction.up: animOffsetY = -50; break;
+      case Direction.down: animOffsetY = 50; break;
+      case Direction.left: animOffsetX = -50; break;
+      case Direction.right: animOffsetX = 50; break;
     }
   }
 
