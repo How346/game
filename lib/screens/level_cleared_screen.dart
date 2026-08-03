@@ -23,11 +23,13 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
   bool isNewBest = false;
   int bestSteps = 0;
   int starsEarned = 0;
+  int _visibleStars = 0; // Controls staggered star animation
 
   @override
   void initState() {
     super.initState();
     _calculateAndSaveProgress();
+    _triggerStarAnimations();
   }
 
   void _calculateAndSaveProgress() async {
@@ -44,10 +46,41 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
     bool newBest = await StorageService.saveBestSteps(widget.levelNumber, widget.steps);
     int best = await StorageService.getBestSteps(widget.levelNumber);
     
-    setState(() {
-      isNewBest = newBest;
-      bestSteps = best;
+    if(mounted) {
+      setState(() {
+        isNewBest = newBest;
+        bestSteps = best;
+      });
+    }
+  }
+
+  // --- NEW: Staggered Star Pop Animation ---
+  void _triggerStarAnimations() {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if(mounted) setState(() => _visibleStars = 1);
     });
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if(mounted) setState(() => _visibleStars = 2);
+    });
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if(mounted) setState(() => _visibleStars = 3);
+    });
+  }
+
+  Widget _buildAnimatedStar(int starIndex, double size) {
+    bool isVisible = _visibleStars >= starIndex;
+    bool isEarned = starsEarned >= starIndex;
+    
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.elasticOut, // Gives it that satisfying "pop" bounce
+      scale: isVisible ? 1.0 : 0.0,
+      child: Icon(
+        Icons.star, 
+        color: isEarned ? Colors.amber : Colors.white24, 
+        size: size
+      ),
+    );
   }
 
   @override
@@ -68,9 +101,11 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.star, color: starsEarned >= 1 ? Colors.amber : Colors.white24, size: 50),
-                  Icon(Icons.star, color: starsEarned >= 3 ? Colors.amber : Colors.white24, size: 60), 
-                  Icon(Icons.star, color: starsEarned >= 2 ? Colors.amber : Colors.white24, size: 50),
+                  _buildAnimatedStar(1, 50), // First Star
+                  const SizedBox(width: 10),
+                  _buildAnimatedStar(3, 65), // Third Star (Center, slightly larger)
+                  const SizedBox(width: 10),
+                  _buildAnimatedStar(2, 50), // Second Star
                 ],
               ),
               const SizedBox(height: 40),
@@ -99,7 +134,6 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
                       const SizedBox(height: 15),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        // FIX: Updated withOpacity to withValues
                         decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
                         child: const Text('🎉 NEW BEST!', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
                       )
@@ -111,7 +145,6 @@ class _LevelClearedScreenState extends State<LevelClearedScreen> {
 
               GestureDetector(
                 onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => GameScreen(levelNumber: widget.levelNumber + 1))),
-                // FIX: Added const keyword here
                 child: const ClayCard(
                   color: Colors.blueAccent, shadowColor: Colors.black, borderRadius: 30,
                   child: Center(child: Text('Next Level →', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
