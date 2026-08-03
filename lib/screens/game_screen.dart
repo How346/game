@@ -31,7 +31,7 @@ class _GameScreenState extends State<GameScreen> {
       hearts = 3;
       steps = 0;
       currentLevel = Level.generateLevel(widget.levelNumber);
-      perfectSteps = currentLevel.blocks.length; // Minimum possible steps
+      perfectSteps = currentLevel.blocks.length;
     });
   }
 
@@ -52,7 +52,6 @@ class _GameScreenState extends State<GameScreen> {
     final settings = context.read<SettingsProvider>();
     settings.triggerHaptic();
 
-    // Every tap counts as a step, right or wrong
     setState(() { steps++; }); 
 
     if (_canBlockClear(block)) {
@@ -61,19 +60,21 @@ class _GameScreenState extends State<GameScreen> {
       });
 
       Future.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return; // FIX: Guard the async gap
+        
         if (currentLevel.blocks.every((b) => b.isCleared)) {
           Navigator.pushReplacement(context, MaterialPageRoute(
             builder: (_) => LevelClearedScreen(
               levelNumber: widget.levelNumber, 
               steps: steps,
-              perfectSteps: perfectSteps, // Pass this to calculate stars
+              perfectSteps: perfectSteps,
             )
           ));
         }
       });
     } else {
       setState(() => hearts--);
-      if (hearts <= 0) _startLevel(); // Quick restart on fail (steps reset)
+      if (hearts <= 0) _startLevel(); 
     }
   }
 
@@ -134,7 +135,8 @@ class _GameScreenState extends State<GameScreen> {
               Positioned(
                 left: x * blockSize + (blockSize / 2) - 4,
                 top: y * blockSize + (blockSize / 2) - 4,
-                child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), shape: BoxShape.circle)),
+                // FIX: Updated withOpacity to withValues
+                child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), shape: BoxShape.circle)),
               ),
           
           for (var block in currentLevel.blocks)
@@ -169,7 +171,7 @@ class _GameScreenState extends State<GameScreen> {
         children: [
           TextButton.icon(
             icon: const Icon(Icons.star, color: Colors.orange), label: Text('Hint', style: TextStyle(color: textColor, fontSize: 18)),
-            onPressed: () {}, // Optional: Implement hint logic here
+            onPressed: () {}, 
           ),
           TextButton.icon(
             icon: const Icon(Icons.refresh, color: Colors.blue), label: Text('Restart', style: TextStyle(color: textColor, fontSize: 18)),
