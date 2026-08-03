@@ -8,11 +8,11 @@ class ArrowBlock {
   bool isCleared;
   bool isHighlighted;
   
-  // Refined animation properties
+  // Animation and interaction states
   double animOffsetX = 0;
   double animOffsetY = 0;
   double opacity = 1.0;
-  double scale = 1.0;
+  bool isPressed = false; // NEW: Tracks if the user's finger is on the block
 
   ArrowBlock({
     required this.id, required this.x, required this.y, 
@@ -35,18 +35,18 @@ class ArrowBlock {
     }
   }
 
-  // Smooth, simple pop and fade animation
+  // NEW: Snappy Projectile Animation
   void triggerFlyOutAnimation() {
     isCleared = true;
-    opacity = 0.0; // Fade out
-    scale = 0.4;   // Shrink down
+    opacity = 0.0; // Fade out during flight
     
-    // Slide just a little bit off its grid slot
+    // Shoot completely off the screen rapidly (800 pixels)
+    int distance = 800; 
     switch (direction) {
-      case Direction.up: animOffsetY = -50; break;
-      case Direction.down: animOffsetY = 50; break;
-      case Direction.left: animOffsetX = -50; break;
-      case Direction.right: animOffsetX = 50; break;
+      case Direction.up: animOffsetY = -distance.toDouble(); break;
+      case Direction.down: animOffsetY = distance.toDouble(); break;
+      case Direction.left: animOffsetX = -distance.toDouble(); break;
+      case Direction.right: animOffsetX = distance.toDouble(); break;
     }
   }
 
