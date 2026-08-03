@@ -14,7 +14,7 @@ class LevelSelectionScreen extends StatefulWidget {
 
 class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
   int unlockedLevel = 1;
-  Map<int, int> levelStars = {}; // Store stars for each level
+  Map<int, int> levelStars = {};
 
   @override
   void initState() {
@@ -25,12 +25,9 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
   void _loadProgress() async {
     int lvl = await StorageService.getUnlockedLevel();
     Map<int, int> stars = {};
-    
-    // Load stars for all unlocked levels
     for (int i = 1; i <= lvl; i++) {
       stars[i] = await StorageService.getStars(i);
     }
-
     setState(() {
       unlockedLevel = lvl;
       levelStars = stars;
@@ -57,7 +54,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
           crossAxisSpacing: 15,
           mainAxisSpacing: 15,
         ),
-        itemCount: 100, // Total levels
+        itemCount: 100,
         itemBuilder: (context, index) {
           int level = index + 1;
           bool isUnlocked = level <= unlockedLevel;
@@ -67,7 +64,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
             onTap: isUnlocked ? () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (_) => GameScreen(levelNumber: level)
-              )).then((_) => _loadProgress()); // Refresh when returning
+              )).then((_) => _loadProgress());
             } : null,
             child: ClayCard(
               color: isUnlocked ? cardColor : (isDark ? Colors.white10 : Colors.black12),
@@ -78,7 +75,8 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                 children: [
                   isUnlocked 
                     ? Text('$level', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor))
-                    : Icon(Icons.lock_rounded, color: textColor.withOpacity(0.5)),
+                    // FIX: Updated withOpacity to withValues
+                    : Icon(Icons.lock_rounded, color: textColor.withValues(alpha: 0.5)),
                   
                   if (isUnlocked)
                     Row(
@@ -86,7 +84,8 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                       children: List.generate(3, (starIndex) => Icon(
                         Icons.star,
                         size: 10,
-                        color: starIndex < stars ? Colors.amber : Colors.grey.withOpacity(0.3),
+                        // FIX: Updated withOpacity to withValues
+                        color: starIndex < stars ? Colors.amber : Colors.grey.withValues(alpha: 0.3),
                       )),
                     )
                 ],
