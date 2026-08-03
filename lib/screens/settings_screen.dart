@@ -40,8 +40,10 @@ class SettingsScreen extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon, color: Colors.blueAccent),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: text)),
-        subtitle: Text(sub, style: TextStyle(color: text.withOpacity(0.5))),
-        trailing: Switch(value: value, onChanged: (v) => onTap(), activeColor: Colors.blueAccent),
+        // FIX: Updated withOpacity to withValues
+        subtitle: Text(sub, style: TextStyle(color: text.withValues(alpha: 0.5))),
+        // FIX: Replaced activeColor with activeTrackColor
+        trailing: Switch(value: value, onChanged: (v) => onTap(), activeTrackColor: Colors.blueAccent, activeThumbColor: Colors.white),
       ),
     );
   }
