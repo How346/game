@@ -29,12 +29,12 @@ class ClayCard extends StatelessWidget {
         boxShadow: isPressed ? [] : [
           BoxShadow(
             color: shadowColor,
-            offset: const Offset(0, 6), // Deep drop shadow for clay effect
+            offset: const Offset(0, 6),
             blurRadius: 0,
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.2),
-            offset: const Offset(0, -2), // Top highlight
+            color: Colors.white.withValues(alpha: 0.2),
+            offset: const Offset(0, -2),
             blurRadius: 2,
           )
         ],
