@@ -13,6 +13,12 @@ class AppTheme {
   static const Color clayBlockDark = Color(0xFF4361EE);
   static const Color clayShadowDark = Colors.black;
 
+  // Arrow Colors (Colorful Blocks)
+  static const Color arrowUp = Color(0xFF4361EE);    // Blue
+  static const Color arrowDown = Color(0xFFF72585);  // Pink
+  static const Color arrowLeft = Color(0xFF4CC9F0);  // Cyan
+  static const Color arrowRight = Color(0xFF7209B7); // Purple
+
   static ThemeData get lightTheme => ThemeData(
     brightness: Brightness.light,
     scaffoldBackgroundColor: bgLight,
