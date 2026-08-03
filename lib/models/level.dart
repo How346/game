@@ -15,33 +15,22 @@ class Level {
   });
 
   static Level generateLevel(int levelNum) {
-    // Gradual complexity increase
     int size = levelNum <= 10 ? 3 : (levelNum <= 40 ? 4 : 5);
     int count = min(size * size, 3 + (levelNum ~/ 1.5));
     Random rand = Random(levelNum * 999);
-
     List<ArrowBlock> validBlocks = [];
     
-    // Keep generating until we find a 100% solvable puzzle
     while (true) {
       validBlocks = _tryGenerateBoard(size, count, rand);
-      if (_isSolvable(validBlocks, size, size)) {
-        break;
-      }
+      if (_isSolvable(validBlocks, size, size)) break;
     }
 
-    return Level(
-      levelNumber: levelNum,
-      gridWidth: size,
-      gridHeight: size,
-      blocks: validBlocks,
-    );
+    return Level(levelNumber: levelNum, gridWidth: size, gridHeight: size, blocks: validBlocks);
   }
 
   static List<ArrowBlock> _tryGenerateBoard(int size, int count, Random rand) {
     List<ArrowBlock> blocks = [];
     Set<String> positions = {};
-
     for (int i = 0; i < count; i++) {
       int x, y;
       do {
@@ -51,24 +40,21 @@ class Level {
 
       positions.add('$x,$y');
       Direction dir = Direction.values[rand.nextInt(Direction.values.length)];
-
       blocks.add(ArrowBlock(id: 'block_$i', x: x, y: y, direction: dir));
     }
     return blocks;
   }
 
-  // The Solver Algorithm
   static bool _isSolvable(List<ArrowBlock> initialBlocks, int width, int height) {
     List<ArrowBlock> remaining = initialBlocks.map((b) => b.clone()).toList();
     bool madeProgress = true;
-
     while (madeProgress && remaining.isNotEmpty) {
       madeProgress = false;
       for (int i = 0; i < remaining.length; i++) {
         if (_canClear(remaining[i], remaining, width, height)) {
           remaining.removeAt(i);
           madeProgress = true;
-          break; // Restart check after removing a block
+          break; 
         }
       }
     }
@@ -78,7 +64,6 @@ class Level {
   static bool _canClear(ArrowBlock block, List<ArrowBlock> allBlocks, int w, int h) {
     int currX = block.x + block.dx;
     int currY = block.y + block.dy;
-
     while (currX >= 0 && currX < w && currY >= 0 && currY < h) {
       bool isBlocked = allBlocks.any((b) => b.x == currX && b.y == currY);
       if (isBlocked) return false;
