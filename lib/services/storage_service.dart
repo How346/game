@@ -40,4 +40,15 @@ class StorageService {
       await prefs.setInt('stars_$level', stars);
     }
   }
+
+  // --- NEW: Reset all game progress ---
+  static Future<void> clearAllProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    for (String key in keys) {
+      if (key == 'unlocked_level' || key.startsWith('best_steps_') || key.startsWith('stars_')) {
+        await prefs.remove(key);
+      }
+    }
+  }
 }
