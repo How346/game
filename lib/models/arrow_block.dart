@@ -7,8 +7,6 @@ class ArrowBlock {
   final Direction direction;
   bool isCleared;
   bool isHighlighted;
-
-  // Animation properties
   double animOffsetX = 0;
   double animOffsetY = 0;
 
@@ -43,15 +41,9 @@ class ArrowBlock {
     }
   }
 
-  // Restored clone method required by the level solver
   ArrowBlock clone() {
     return ArrowBlock(
-      id: id, 
-      x: x, 
-      y: y, 
-      direction: direction, 
-      isCleared: isCleared,
-      isHighlighted: isHighlighted
+      id: id, x: x, y: y, direction: direction, isCleared: isCleared, isHighlighted: isHighlighted
     );
   }
 }
